@@ -1,18 +1,14 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Response
-from ..models import orders as model
+from ..models import promotions as model
 from sqlalchemy.exc import SQLAlchemyError
 
 
 def create(db: Session, request):
-    new_item = model.Order(
-        customer_id=request.customer_id,
-        order_date=request.order_date,
-        tracking_number=request.tracking_number,
-        order_status=request.order_status,
-        order_type=request.order_type,
-        total_price=request.total_price,
-        promo_id=request.promo_id
+    new_item = model.Promotion(
+        promo_code=request.promo_code,
+        expiration_date=request.expiration_date,
+        discount_amount=request.discount_amount
     )
 
     try:
@@ -20,7 +16,7 @@ def create(db: Session, request):
         db.commit()
         db.refresh(new_item)
     except SQLAlchemyError as e:
-        error = str(e.__dict__.get('orig', e))
+        error = str(e.__dict__.get("orig", e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     return new_item
@@ -28,49 +24,48 @@ def create(db: Session, request):
 
 def read_all(db: Session):
     try:
-        result = db.query(model.Order).all()
+        return db.query(model.Promotion).all()
     except SQLAlchemyError as e:
-        error = str(e.__dict__.get('orig', e))
+        error = str(e.__dict__.get("orig", e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    return result
 
 
 def read_one(db: Session, item_id):
     try:
-        item = db.query(model.Order).filter(model.Order.order_id == item_id).first()
+        item = db.query(model.Promotion).filter(model.Promotion.promo_id == item_id).first()
         if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotion not found")
     except SQLAlchemyError as e:
-        error = str(e.__dict__.get('orig', e))
+        error = str(e.__dict__.get("orig", e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     return item
 
 
 def update(db: Session, item_id, request):
     try:
-        item = db.query(model.Order).filter(model.Order.order_id == item_id)
+        item = db.query(model.Promotion).filter(model.Promotion.promo_id == item_id)
         if not item.first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotion not found")
 
         update_data = request.dict(exclude_unset=True)
         item.update(update_data, synchronize_session=False)
         db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__.get('orig', e))
+        error = str(e.__dict__.get("orig", e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     return item.first()
 
 
 def delete(db: Session, item_id):
     try:
-        item = db.query(model.Order).filter(model.Order.order_id == item_id)
+        item = db.query(model.Promotion).filter(model.Promotion.promo_id == item_id)
         if not item.first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotion not found")
 
         item.delete(synchronize_session=False)
         db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__.get('orig', e))
+        error = str(e.__dict__.get("orig", e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
